@@ -1,38 +1,74 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
-from PyQt5.QtCore import QTimer
-import pyqtgraph as pg
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame
+from PySide6.QtCore import Qt
 
-class BandwidthChart(QWidget):
-    def __init__(self):
-        super().__init__()
+from .styles import (
+    BG_PANEL,
+    BORDER,
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+    FONT_FAMILY_MAIN,
+)
 
-        layout = QVBoxLayout()
-        self.setLayout(layout)
 
-        self.label = QLabel("Bandwidth (Mbps)")
-        layout.addWidget(self.label)
+class ChartsPanel(QFrame):
+    """
+    Placeholder for future charts (bandwidth, protocol distribution, etc.)
+    """
 
-        self.graph = pg.PlotWidget()
-        layout.addWidget(self.graph)
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-        self.down_data = []
-        self.up_data = []
+        self.setObjectName("ChartsPanel")
+        self.setStyleSheet(
+            f"""
+            QFrame#ChartsPanel {{
+                background-color: {BG_PANEL};
+                border: 1px solid {BORDER};
+                border-radius: 4px;
+            }}
+        """
+        )
 
-        self.curve_down = self.graph.plot(pen='y')
-        self.curve_up = self.graph.plot(pen='c')
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
 
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.refresh)
-        self.timer.start(500)
+        # Title
+        title = QLabel("Charts (Coming Soon)")
+        title.setAlignment(Qt.AlignLeft)
+        title.setStyleSheet(
+            f"""
+            color: {TEXT_PRIMARY};
+            font-size: 14px;
+            font-weight: 600;
+            font-family: {FONT_FAMILY_MAIN};
+        """
+        )
 
-    def update_stats(self, stats):
-        self.down_data.append(stats["mbps_down"])
-        self.up_data.append(stats["mbps_up"])
+        # Subtitle
+        subtitle = QLabel("Bandwidth graphs, protocol distribution, and more.")
+        subtitle.setWordWrap(True)
+        subtitle.setStyleSheet(
+            f"""
+            color: {TEXT_SECONDARY};
+            font-size: 11px;
+            font-family: {FONT_FAMILY_MAIN};
+        """
+        )
 
-        if len(self.down_data) > 100:
-            self.down_data.pop(0)
-            self.up_data.pop(0)
+        # Placeholder content
+        placeholder = QLabel("📊 Chart rendering not implemented yet")
+        placeholder.setAlignment(Qt.AlignCenter)
+        placeholder.setStyleSheet(
+            f"""
+            color: {TEXT_SECONDARY};
+            font-size: 12px;
+            font-family: {FONT_FAMILY_MAIN};
+        """
+        )
 
-    def refresh(self):
-        self.curve_down.setData(self.down_data)
-        self.curve_up.setData(self.up_data)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addStretch()
+        layout.addWidget(placeholder)
+        layout.addStretch()

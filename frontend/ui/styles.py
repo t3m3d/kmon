@@ -2,6 +2,7 @@ from PySide6.QtGui import QPalette, QColor
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
+# Colors
 BG_DARK = "#1E1E1E"
 BG_PANEL = "#202124"
 TEXT_PRIMARY = "#E0E0E0"
@@ -19,10 +20,6 @@ FONT_FAMILY_MAIN = "HeavyData Nerd Font"
 
 
 def apply_app_style(app: QApplication):
-    """
-    Basic dark style that still respects platform hints.
-    You can later enhance this to fully follow system theme.
-    """
     palette = QPalette()
 
     palette.setColor(QPalette.Window, QColor(BG_DARK))
@@ -37,5 +34,5 @@ def apply_app_style(app: QApplication):
 
     app.setPalette(palette)
 
-    # modern style hints
+    # Slightly modern style hints
     app.setStyle("Fusion")
