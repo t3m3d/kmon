@@ -107,9 +107,9 @@ class PacketDetailsPanel(QWidget):
 
         layout.addWidget(self.card, 1)
 
-    def show_packet(self, packet: dict):
+    def show_packet(self, packet: dict, system_ip: str):
         self.lbl_src.setText(packet.get("src_ip", "-"))
-        self.lbl_dst.setText(packet.get("dst_ip", "-"))
+        self.lbl_dst.setText(system_ip)
         self.lbl_proto.setText(packet.get("protocol", "-"))
         self.lbl_len.setText(str(packet.get("length", "-")))
         self.lbl_flags.setText(packet.get("flags", "-"))

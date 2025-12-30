@@ -3,6 +3,18 @@ import random
 import time
 
 from PySide6.QtCore import QThread, Signal
+import socket
+
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "Unknown"
+
 
 
 class BackendClient(QThread):
@@ -22,7 +34,7 @@ class BackendClient(QThread):
         # TODO: Replace this simulation with real backend integration.
 
         self.status_changed.emit("capturing")
-        self.interface_changed.emit("Ethernet0")
+        self.interface_changed.emit(get_local_ip())
 
         while self._running:
             # Simulate packet every 50ms
@@ -43,7 +55,8 @@ class BackendClient(QThread):
                     "udp": random.randint(5, 150),      # simulated
                     "icmp": random.randint(1, 50),      # simulated
                     "bandwidth": random.randint(100, 900),  # kbps simulated
-                    "interface": "Ethernet0",
+                    "interface": get_local_ip(),
+            
                 }
                 self.stats_updated.emit(stats)      
                 self.stats_updated.emit(stats)

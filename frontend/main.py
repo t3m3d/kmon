@@ -17,7 +17,6 @@ from ui.packet_list import PacketListPanel
 from ui.packet_details import PacketDetailsPanel
 from ui.styles import apply_app_style
 
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -28,6 +27,15 @@ class MainWindow(QMainWindow):
         # Central widget and layout
         central = QWidget(self)
         central_layout = QVBoxLayout(central)
+        central_layout.setContentsMargins(0, 0, 0, 0)
+        central_layout.setSpacing(0)
+
+        # Header
+        self.header = HeaderBar(parent=self)
+        central_layout.addWidget(self.header)
+
+        # Splitter, panels, footer, backend setup...
+        self.backend.interface_changed.connect(self.on_interface_changed)
         central_layout.setContentsMargins(0, 0, 0, 0)
         central_layout.setSpacing(0)
 
@@ -89,15 +97,15 @@ class MainWindow(QMainWindow):
 
     def on_interface_changed(self, interface_name: str):
         self.header.set_interface_name(interface_name)
-
+        self.system_ip = interface_name
+        
     def on_status_changed(self, status: str):
         # status: "capturing" | "stopped"
         self.header.set_status(status)
 
-    # --- Slot called from packet list -----------
-
-    def on_packet_selected(self, packet: dict):
-        self.packet_details.show_packet(packet)
+    def show_packet(self, packet: dict, system_ip: str):
+        self.lbl_src.setText(packet.get("src_ip", "-"))
+        self.lbl_dst.setText(system_ip)
 
 
 def main():
