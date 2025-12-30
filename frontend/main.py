@@ -4,7 +4,6 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
     QVBoxLayout,
-    QHBoxLayout,
     QSplitter,
 )
 from PySide6.QtCore import Qt
@@ -14,8 +13,8 @@ from core.backend_client import BackendClient
 from ui.header import HeaderBar
 from ui.footer import FooterBar
 from ui.packet_list import PacketListPanel
-from ui.packet_details import PacketDetailsPanel
 from ui.styles import apply_app_style
+from ui.packet_details import PacketDetailsPanel
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -24,7 +23,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("K'mon - KryptonBytes Network Monitor")
         self.resize(1200, 700)
 
-        # Central widget and layout
+        # Central widget + layout
         central = QWidget(self)
         central_layout = QVBoxLayout(central)
         central_layout.setContentsMargins(0, 0, 0, 0)
@@ -34,16 +33,7 @@ class MainWindow(QMainWindow):
         self.header = HeaderBar(parent=self)
         central_layout.addWidget(self.header)
 
-        # Splitter, panels, footer, backend setup...
-        self.backend.interface_changed.connect(self.on_interface_changed)
-        central_layout.setContentsMargins(0, 0, 0, 0)
-        central_layout.setSpacing(0)
-
-        # Header
-        self.header = HeaderBar(parent=self)
-        central_layout.addWidget(self.header)
-
-        # Splitter Plan: left = packet list, middle = vital stats, right = packet details
+        # Splitter layout
         splitter = QSplitter(Qt.Horizontal, parent=self)
         splitter.setHandleWidth(2)
 
@@ -51,11 +41,10 @@ class MainWindow(QMainWindow):
         self.vital_panel = VitalPanel(parent=self)
         self.packet_details = PacketDetailsPanel(parent=self)
 
-        splitter.addWidget(self.packet_list)                # Left
-        splitter.addWidget(self.vital_panel)                # Middle
-        splitter.addWidget(self.packet_details)             # Right
+        splitter.addWidget(self.packet_list)
+        splitter.addWidget(self.vital_panel)
+        splitter.addWidget(self.packet_details)
 
-        # stretch factors
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
         splitter.setStretchFactor(2, 2)
@@ -68,26 +57,30 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(central)
 
-        # Backend client thread
+        # Backend
         self.backend = BackendClient()
         self.backend.packet_received.connect(self.on_packet_received)
         self.backend.stats_updated.connect(self.on_stats_updated)
         self.backend.interface_changed.connect(self.on_interface_changed)
         self.backend.status_changed.connect(self.on_status_changed)
 
+        # Packet selection
         self.packet_list.packet_selected.connect(self.on_packet_selected)
 
-        # Connect backend to the VitalPanel
+        # Vital panel stats
         self.backend.stats_updated.connect(self.vital_panel.update_stats)
 
         self.backend.start()
+
+        # Store system IP
+        self.system_ip = "Unknown"
 
     def closeEvent(self, event):
         self.backend.stop()
         self.backend.wait(2000)
         super().closeEvent(event)
 
-    # ----- Slots called from backend ----
+    # ----- Backend slots -----
 
     def on_packet_received(self, packet: dict):
         self.packet_list.add_packet(packet)
@@ -98,14 +91,12 @@ class MainWindow(QMainWindow):
     def on_interface_changed(self, interface_name: str):
         self.header.set_interface_name(interface_name)
         self.system_ip = interface_name
-        
+
     def on_status_changed(self, status: str):
-        # status: "capturing" | "stopped"
         self.header.set_status(status)
 
-    def show_packet(self, packet: dict, system_ip: str):
-        self.lbl_src.setText(packet.get("src_ip", "-"))
-        self.lbl_dst.setText(system_ip)
+    def on_packet_selected(self, packet: dict):
+        self.packet_details.show_packet(packet, self.system_ip)
 
 
 def main():
