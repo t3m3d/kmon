@@ -1,8 +1,5 @@
-from cProfile import label
-from operator import add
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextEdit, QFormLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextEdit, QFormLayout, QSizePolicy
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QSizePolicy
 from ui.styles import TEXT_PRIMARY, TEXT_SECONDARY, FONT_FAMILY_MAIN
 
 
@@ -28,10 +25,11 @@ class PacketDetailsPanel(QWidget):
         self.form = QFormLayout()
         self.form.setLabelAlignment(Qt.AlignLeft)
         layout.addLayout(self.form)
+
         self.setMinimumWidth(300)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # Text area for raw packet dump
+        # Raw packet dump
         self.raw_view = QTextEdit()
         self.raw_view.setReadOnly(True)
         self.raw_view.setStyleSheet(f"""
@@ -47,22 +45,31 @@ class PacketDetailsPanel(QWidget):
         while self.form.rowCount():
             self.form.removeRow(0)
 
+        self.raw_view.setMinimumHeight(150)
+
         # Helper to add rows
         def add(label, value):
             lbl = QLabel(label)
-            val = QLabel(str(value))
+            val = QLabel(str(value) if value else " ")
+
             lbl.setStyleSheet(f"color: {TEXT_PRIMARY}; font-family: {FONT_FAMILY_MAIN};")
             val.setStyleSheet(f"color: {TEXT_SECONDARY}; font-family: {FONT_FAMILY_MAIN};")
+
+            lbl.setFixedHeight(22)
+            val.setFixedHeight(22)
+
             self.form.addRow(lbl, val)
-        # Add packet details        
+
+        # Use backend keys
         add("Source IP:", packet.get("src_ip", "Unknown"))
         add("Destination IP:", packet.get("dst_ip", "Unknown"))
         add("Protocol:", packet.get("protocol", "Unknown"))
         add("Length:", packet.get("length", "Unknown"))
+        add("Info:", packet.get("info", ""))
         add("System IP:", system_ip)
+
         # Raw dump
         raw = packet.get("raw", "")
         self.raw_view.setPlainText(raw)
-        self.form.update()
-        self.raw_view.update()
+
         self.update()
