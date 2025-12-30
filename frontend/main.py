@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+from ui.vital_panel import VitalPanel
 from core.backend_client import BackendClient
 from ui.header import HeaderBar
 from ui.footer import FooterBar
@@ -21,7 +22,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("kmon - KryptonBytes Network Monitor")
+        self.setWindowTitle("K'mon - KryptonBytes Network Monitor")
         self.resize(1200, 700)
 
         # Central widget and layout
@@ -34,17 +35,22 @@ class MainWindow(QMainWindow):
         self.header = HeaderBar(parent=self)
         central_layout.addWidget(self.header)
 
-        # Splitter: left = packet list, right = packet details
+        # Splitter Plan: left = packet list, middle = vital stats, right = packet details
         splitter = QSplitter(Qt.Horizontal, parent=self)
         splitter.setHandleWidth(2)
 
         self.packet_list = PacketListPanel(parent=self)
+        self.vital_panel = VitalPanel(parent=self)
         self.packet_details = PacketDetailsPanel(parent=self)
 
-        splitter.addWidget(self.packet_list)
-        splitter.addWidget(self.packet_details)
+        splitter.addWidget(self.packet_list)                # Left
+        splitter.addWidget(self.vital_panel)                # Middle
+        splitter.addWidget(self.packet_details)             # Right
+
+        # stretch factors
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
+        splitter.setStretchFactor(2, 2)
 
         central_layout.addWidget(splitter)
 
@@ -63,6 +69,9 @@ class MainWindow(QMainWindow):
 
         self.packet_list.packet_selected.connect(self.on_packet_selected)
 
+        # Connect backend to the VitalPanel
+        self.backend.stats_updated.connect(self.vital_panel.update_stats)
+
         self.backend.start()
 
     def closeEvent(self, event):
@@ -70,7 +79,7 @@ class MainWindow(QMainWindow):
         self.backend.wait(2000)
         super().closeEvent(event)
 
-    # --- Slots called from backend ---
+    # ----- Slots called from backend ----
 
     def on_packet_received(self, packet: dict):
         self.packet_list.add_packet(packet)
@@ -85,7 +94,7 @@ class MainWindow(QMainWindow):
         # status: "capturing" | "stopped"
         self.header.set_status(status)
 
-    # --- Slot called from packet list ---
+    # --- Slot called from packet list -----------
 
     def on_packet_selected(self, packet: dict):
         self.packet_details.show_packet(packet)

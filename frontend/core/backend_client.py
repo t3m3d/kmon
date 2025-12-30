@@ -37,10 +37,15 @@ class BackendClient(QThread):
             if now - self._last_stats_time >= 1.0:
                 pps = self._packets_in_interval
                 stats = {
-                    "packets_per_sec": pps,
-                    "total_packets": self._packets_total,
-                    "dropped_packets": 0,
+                    "pps": pps,
+                    "total": self._packets_total,
+                    "tcp": random.randint(10, 200),     # simulated
+                    "udp": random.randint(5, 150),      # simulated
+                    "icmp": random.randint(1, 50),      # simulated
+                    "bandwidth": random.randint(100, 900),  # kbps simulated
+                    "interface": "Ethernet0",
                 }
+                self.stats_updated.emit(stats)      
                 self.stats_updated.emit(stats)
                 self._packets_in_interval = 0
                 self._last_stats_time = now
