@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QFrame
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QFrame
 from PySide6.QtCore import Qt
 
 from .styles import (
@@ -46,6 +46,9 @@ class VitalPanel(QFrame):
         self.icmp_label = QLabel("ICMP: —")
         self.bandwidth_label = QLabel("Bandwidth: —")
 
+        # NEW — VPN status
+        self.vpn_label = QLabel("VPN: —")
+
         for lbl in [
             self.interface_label,
             self.packets_sec_label,
@@ -54,9 +57,11 @@ class VitalPanel(QFrame):
             self.udp_label,
             self.icmp_label,
             self.bandwidth_label,
+            self.vpn_label,
         ]:
             lbl.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px;")
 
+        # Layout
         layout.addWidget(self.title)
         layout.addSpacing(6)
         layout.addWidget(self.interface_label)
@@ -66,10 +71,13 @@ class VitalPanel(QFrame):
         layout.addWidget(self.udp_label)
         layout.addWidget(self.icmp_label)
         layout.addWidget(self.bandwidth_label)
+        layout.addWidget(self.vpn_label)
         layout.addStretch()
 
+    # Update panel with backend stats
     def update_stats(self, stats: dict):
-        """Update system vitls panel with new data from the backend"""
+        """Update system vitals panel with new data from the backend"""
+
         self.interface_label.setText(f"Interface: {stats.get('interface', '—')}")
         self.packets_sec_label.setText(f"Packets/sec: {stats.get('pps', '—')}")
         self.total_packets_label.setText(f"Total Packets: {stats.get('total', '—')}")
@@ -77,3 +85,13 @@ class VitalPanel(QFrame):
         self.udp_label.setText(f"UDP: {stats.get('udp', '—')}")
         self.icmp_label.setText(f"ICMP: {stats.get('icmp', '—')}")
         self.bandwidth_label.setText(f"Bandwidth: {stats.get('bandwidth', '—')} kbps")
+
+        # NEW — VPN status
+        vpn_active = stats.get("vpn_active", 0)
+        vpn_type = stats.get("vpn_type", "")
+        vpn_iface = stats.get("vpn_iface", "")
+
+        if vpn_active:
+            self.vpn_label.setText(f"VPN: {vpn_type} ({vpn_iface})")
+        else:
+            self.vpn_label.setText("VPN: None")

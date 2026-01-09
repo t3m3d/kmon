@@ -1,20 +1,8 @@
 import json
-import random
+import socket
 import time
 
 from PySide6.QtCore import QThread, Signal
-import socket
-
-def get_local_ip():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
-    except:
-        return "Unknown"
-
 
 
 class BackendClient(QThread):
@@ -23,88 +11,84 @@ class BackendClient(QThread):
     interface_changed = Signal(str)
     status_changed = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, host="127.0.0.1", port=9090, parent=None):
         super().__init__(parent)
+        self.host = host
+        self.port = port
         self._running = True
-        self._packets_total = 0
-        self._last_stats_time = time.time()
-        self._packets_in_interval = 0
+        self.sock = None
 
+    # Thread entry point
     def run(self):
-        # TODO: Replace this simulation with real backend integration.
+        self.status_changed.emit("connecting")
 
-        self.status_changed.emit("capturing")
-        self.interface_changed.emit(get_local_ip())
+        # Try to connect to backend
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect((self.host, self.port))
+            self.sock.settimeout(1.0)
+            self.status_changed.emit("capturing")
+        except Exception as e:
+            self.status_changed.emit(f"error: {e}")
+            return
+
+        buffer = ""
 
         while self._running:
-            # Simulate packet every 50ms
-            time.sleep(0.05)
-            packet = self._generate_fake_packet()
-            self.packet_received.emit(packet)
+            try:
+                data = self.sock.recv(4096)
 
-            self._packets_total += 1
-            self._packets_in_interval += 1
+                if not data:
+                    self.status_changed.emit("backend disconnected")
+                    break
 
-            now = time.time()
-            if now - self._last_stats_time >= 1.0:
-                pps = self._packets_in_interval
-                stats = {
-                    "pps": pps,
-                    "total": self._packets_total,
-                    "tcp": random.randint(10, 200),     # simulated
-                    "udp": random.randint(5, 150),      # simulated
-                    "icmp": random.randint(1, 50),      # simulated
-                    "bandwidth": random.randint(100, 900),  # kbps simulated
-                    "interface": get_local_ip(),
-            
-                }
-                self.stats_updated.emit(stats)      
-                self.stats_updated.emit(stats)
-                self._packets_in_interval = 0
-                self._last_stats_time = now
+                buffer += data.decode("utf-8")
+
+                # Process complete JSON lines
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    if not line.strip():
+                        continue
+
+                    try:
+                        msg = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+
+                    self._handle_message(msg)
+
+            except socket.timeout:
+                continue
+            except Exception as e:
+                self.status_changed.emit(f"error: {e}")
+                break
 
         self.status_changed.emit("stopped")
 
+    # Stop thread
     def stop(self):
         self._running = False
+        try:
+            if self.sock:
+                self.sock.close()
+        except:
+            pass
 
-    def _generate_fake_packet(self) -> dict:
-        src_ips = ["192.168.1.10", "10.0.0.5", "192.168.1.22"]
-        dst_ips = ["8.8.8.8", "1.1.1.1", "192.168.1.1"]
-        protos = ["TCP", "UDP", "ICMP", "ARP"]
-        flags_tcp = ["SYN", "ACK", "PSH", "FIN"]
+    # Handle backend JSON messages
+    def _handle_message(self, msg):
+        msg_type = msg.get("type")
+        data = msg.get("data", {})
 
-        proto = random.choice(protos)
-        length = random.randint(60, 1500)
+        if msg_type == "packet":
+            self.packet_received.emit(data)
 
-        packet = {
-            "timestamp": time.strftime("%H:%M:%S", time.localtime()),
-            "src_ip": random.choice(src_ips),
-            "dst_ip": random.choice(dst_ips),
-            "protocol": proto,
-            "length": length,
-            "flags": "",
-            "info": "",
-            "hex_dump": "",
-        }
+        elif msg_type == "stats":
+            # Stats include VPN fields now:
+            #   vpn_active
+            #   vpn_type
+            #   vpn_iface
+            self.stats_updated.emit(data)
 
-        if proto == "TCP":
-            packet["flags"] = ", ".join(random.sample(flags_tcp, k=2))
-            packet["info"] = "TCP segment"
-        elif proto == "UDP":
-            packet["info"] = "UDP datagram"
-        elif proto == "ICMP":
-            packet["info"] = "ICMP echo request"
-        elif proto == "ARP":
-            packet["info"] = "ARP who has"
-
-        # Fake hex dump
-        hex_bytes = [f"{random.randint(0, 255):02x}" for _ in range(64)]
-        lines = []
-        for i in range(0, len(hex_bytes), 16):
-            chunk = hex_bytes[i : i + 16]
-            offset = f"{i:04x}"
-            lines.append(f"{offset}  " + " ".join(chunk))
-        packet["hex_dump"] = "\n".join(lines)
-
-        return packet
+        elif msg_type == "interface":
+            iface = data.get("name", "unknown")
+            self.interface_changed.emit(iface)

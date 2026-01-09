@@ -4,6 +4,12 @@
 #include "par.h"
 #include <stdint.h>
 
+typedef struct vpn_info {
+    int active;
+    char type[32];
+    char iface[32];
+} vpn_info_t;
+
 typedef struct {
     double mbps_down;
     double mbps_up;
@@ -11,6 +17,8 @@ typedef struct {
     uint64_t tcp_count;
     uint64_t udp_count;
     uint64_t icmp_count;
+
+    vpn_info_t vpn;
 } stats_snapshot_t;
 
 void stats_init(void);

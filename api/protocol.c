@@ -3,17 +3,18 @@
 #include "stats.h"
 #include "util.h"
 #include <stdio.h>
+#include <string.h>
 
 size_t proto_packet_json(const packet_info_t* pkt, char* out, size_t max) {
     return snprintf(out, max,
         "{\"type\":\"packet\",\"data\":{"
-        "\"timestamp\":%llu,"
-        "\"src_ip\":\"%s\","
-        "\"dst_ip\":\"%s\","
-        "\"src_port\":%u,"
-        "\"dst_port\":%u,"
-        "\"protocol\":%u,"
-        "\"length\":%zu"
+            "\"timestamp\":%llu,"
+            "\"src_ip\":\"%s\","
+            "\"dst_ip\":\"%s\","
+            "\"src_port\":%u,"
+            "\"dst_port\":%u,"
+            "\"protocol\":%u,"
+            "\"length\":%zu"
         "}}\n",
         pkt->timestamp,
         util_ip_to_str(pkt->src_ip),
@@ -28,18 +29,24 @@ size_t proto_packet_json(const packet_info_t* pkt, char* out, size_t max) {
 size_t proto_stats_json(const stats_snapshot_t* s, char* out, size_t max) {
     return snprintf(out, max,
         "{\"type\":\"stats\",\"data\":{"
-        "\"mbps_down\":%.3f,"
-        "\"mbps_up\":%.3f,"
-        "\"total_packets\":%llu,"
-        "\"tcp\":%llu,"
-        "\"udp\":%llu,"
-        "\"icmp\":%llu"
+            "\"mbps_down\":%.3f,"
+            "\"mbps_up\":%.3f,"
+            "\"total_packets\":%llu,"
+            "\"tcp\":%llu,"
+            "\"udp\":%llu,"
+            "\"icmp\":%llu,"
+            "\"vpn_active\":%d,"
+            "\"vpn_type\":\"%s\","
+            "\"vpn_iface\":\"%s\""
         "}}\n",
         s->mbps_down,
         s->mbps_up,
         s->total_packets,
         s->tcp_count,
         s->udp_count,
-        s->icmp_count
+        s->icmp_count,
+        s->vpn.active,
+        s->vpn.type,
+        s->vpn.iface
     );
 }
