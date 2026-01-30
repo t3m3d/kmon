@@ -4,7 +4,6 @@ import time
 
 from PySide6.QtCore import QThread, Signal
 
-
 class BackendClient(QThread):
     packet_received = Signal(dict)
     stats_updated = Signal(dict)

@@ -1,8 +1,7 @@
 from PySide6.QtWidgets import QFrame, QLabel, QHBoxLayout
 from PySide6.QtCore import Qt
 
-from .styles import BG_PANEL, BORDER, TEXT_SECONDARY, FONT_FAMILY_MAIN
-
+from ..styles import BG_PANEL, BORDER, TEXT_SECONDARY, FONT_FAMILY_MAIN
 
 class FooterBar(QFrame):
     def __init__(self, parent=None):

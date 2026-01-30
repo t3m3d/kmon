@@ -1,6 +1,10 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextEdit, QFormLayout, QSizePolicy
 from PySide6.QtCore import Qt
-from ui.styles import TEXT_PRIMARY, TEXT_SECONDARY, FONT_FAMILY_MAIN
+from frontend.ui.styles import (
+    TEXT_PRIMARY,
+    TEXT_SECONDARY,
+    FONT_FAMILY_MAIN,
+)
 
 
 class PacketDetailsPanel(QWidget):

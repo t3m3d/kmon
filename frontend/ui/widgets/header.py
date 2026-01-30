@@ -2,8 +2,7 @@ from PySide6.QtWidgets import QWidget, QLabel, QHBoxLayout, QFrame
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtCore import Qt
 
-from .styles import TEXT_PRIMARY, TEXT_SECONDARY, BG_PANEL, BORDER, FONT_FAMILY_MAIN
-
+from ..styles import TEXT_PRIMARY, TEXT_SECONDARY, BG_PANEL, BORDER, FONT_FAMILY_MAIN
 
 class StatusDot(QWidget):
     def __init__(self, parent=None):
@@ -27,7 +26,6 @@ class StatusDot(QWidget):
             radius * 2,
             radius * 2,
         )
-
 
 class HeaderBar(QFrame):
     def __init__(self, parent=None):

@@ -7,14 +7,15 @@ from PySide6.QtWidgets import (
     QSplitter,
 )
 from PySide6.QtCore import Qt
-from ui.vital_panel import VitalPanel
-from core.backend_client import BackendClient
-from ui.header import HeaderBar
-from ui.footer import FooterBar
-from ui.packet_list import PacketListPanel
-from ui.styles import apply_app_style
-from ui.packet_details import PacketDetailsPanel
-from ui.crt_panel import CRTPanel
+
+from frontend.panels.vital_panel import VitalPanel
+from frontend.core.backend_client import BackendClient
+from frontend.ui.widgets.header import HeaderBar
+from frontend.ui.widgets.footer import FooterBar
+from frontend.panels.packet_list import PacketListPanel
+from frontend.ui.styles import apply_app_style
+from frontend.panels.packet_details import PacketDetailsPanel
+from frontend.ui.widgets.crt_panel import CRTPanel
 
 class MainWindow(QMainWindow):
     def __init__(self):

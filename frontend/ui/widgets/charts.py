@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QFrame
 from PySide6.QtCore import Qt
 
-from .styles import (
+from ..styles import (
     BG_PANEL,
     BORDER,
     TEXT_PRIMARY,
