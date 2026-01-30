@@ -17,6 +17,10 @@ from frontend.ui.styles import apply_app_style
 from frontend.panels.packet_details import PacketDetailsPanel
 from frontend.ui.widgets.crt_panel import CRTPanel
 
+# NEW PANEL IMPORT
+from frontend.panels.devices_panel import DevicesPanel
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -43,15 +47,20 @@ class MainWindow(QMainWindow):
         self.packet_details = PacketDetailsPanel(parent=self)
         self.crt_panel = CRTPanel(parent=self)
 
+        # NEW DEVICES PANEL INSTANCE
+        self.devices_panel = DevicesPanel(parent=self)
+
         splitter.addWidget(self.packet_list)
         splitter.addWidget(self.vital_panel)
         splitter.addWidget(self.packet_details)
         splitter.addWidget(self.crt_panel)
+        splitter.addWidget(self.devices_panel)
 
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
         splitter.setStretchFactor(2, 2)
         splitter.setStretchFactor(3, 2)
+        splitter.setStretchFactor(4, 2)
 
         central_layout.addWidget(splitter)
 
