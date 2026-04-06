@@ -1,0 +1,13 @@
+// kmon_cap.krh — Krypton declarations for kmon_cap.h bridge
+
+jxt {
+    c "kmon_cap.h"
+
+    func kmonCapOpen(iface)
+    func kmonCapClose()
+    func kmonCapPump()
+    func kmonCapNext()
+    func kmonCapByte(hex, offset)
+    func kmonCapU16(hex, offset)
+    func kmonCapU32(hex, offset)
+}
