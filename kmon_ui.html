@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K'mon — KryptonBytes Network Monitor</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0f;
+    color: #c8d0e0;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  #header {
+    background: #0d0d1a;
+    border-bottom: 1px solid #1e2a3a;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  #header .title {
+    color: #4fc3f7;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  #header .subtitle { color: #546e7a; font-size: 11px; }
+  #status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #546e7a;
+    flex-shrink: 0;
+  }
+  #status-dot.connected { background: #00e676; box-shadow: 0 0 6px #00e676; }
+  #status-dot.error     { background: #f44336; }
+  #iface-label { color: #80cbc4; margin-left: auto; font-size: 11px; }
+  #version-label { color: #37474f; font-size: 10px; }
+
+  /* ── Main layout ── */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 1px;
+    background: #111;
+  }
+
+  .panel {
+    background: #0d0d1a;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-title {
+    background: #0a0a14;
+    border-bottom: 1px solid #1e2a3a;
+    padding: 4px 10px;
+    color: #4fc3f7;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  /* ── Packet list ── */
+  #panel-packets { flex: 3; min-width: 0; }
+
+  #packet-table-wrap { flex: 1; overflow-y: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  thead th {
+    background: #111827;
+    color: #607d8b;
+    padding: 4px 8px;
+    text-align: left;
+    border-bottom: 1px solid #1e2a3a;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  tbody tr { cursor: pointer; border-bottom: 1px solid #0f1520; }
+  tbody tr:hover { background: #1a2030; }
+  tbody tr.selected { background: #1a3050; }
+  tbody td { padding: 3px 8px; white-space: nowrap; overflow: hidden; max-width: 200px; text-overflow: ellipsis; }
+
+  .proto-tcp  { color: #4fc3f7; }
+  .proto-udp  { color: #81c784; }
+  .proto-icmp { color: #ffb74d; }
+  .proto-other{ color: #9e9e9e; }
+
+  /* ── Vital panel ── */
+  #panel-vital { flex: 2; min-width: 180px; max-width: 260px; }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 12px;
+    border-bottom: 1px solid #0f1520;
+  }
+  .stat-label { color: #546e7a; }
+  .stat-value { color: #80cbc4; font-weight: bold; }
+  .stat-value.highlight { color: #4fc3f7; }
+
+  .section-sep {
+    padding: 4px 12px;
+    color: #1e3a4a;
+    font-size: 10px;
+    letter-spacing: 2px;
+    border-bottom: 1px solid #0f1520;
+  }
+
+  .vpn-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+  .vpn-active   { background: #1b5e20; color: #a5d6a7; }
+  .vpn-inactive { background: #1a1a2e; color: #455a64; }
+
+  /* ── Packet details ── */
+  #panel-details { flex: 2; min-width: 0; }
+
+  #details-content {
+    padding: 10px 12px;
+    overflow-y: auto;
+    flex: 1;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+  .detail-row { display: flex; gap: 8px; border-bottom: 1px solid #0f1520; padding: 2px 0; }
+  .detail-key   { color: #546e7a; min-width: 100px; flex-shrink: 0; }
+  .detail-val   { color: #c8d0e0; }
+  #hex-dump {
+    margin-top: 10px;
+    color: #37474f;
+    font-size: 10px;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+  #hex-dump span { color: #546e7a; }
+
+  /* ── Devices panel ── */
+  #panel-devices { flex: 2; min-width: 0; }
+
+  #devices-content { flex: 1; overflow-y: auto; }
+
+  .device-row {
+    padding: 5px 12px;
+    border-bottom: 1px solid #0f1520;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .device-row:hover { background: #1a2030; }
+  .device-ip   { color: #4fc3f7; font-weight: bold; }
+  .device-mac  { color: #546e7a; font-size: 10px; }
+  .device-host { color: #80cbc4; font-size: 11px; }
+
+  #scan-btn {
+    margin: 8px 12px;
+    padding: 5px 12px;
+    background: #1a3050;
+    border: 1px solid #1e4070;
+    color: #4fc3f7;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  #scan-btn:hover { background: #1e3a60; }
+  #scan-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* ── CRT panel ── */
+  #panel-crt { flex: 2; min-width: 0; }
+  #crt-canvas { flex: 1; width: 100%; background: #000; }
+
+  /* ── Footer ── */
+  #footer {
+    background: #0a0a14;
+    border-top: 1px solid #1e2a3a;
+    padding: 4px 14px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-shrink: 0;
+    font-size: 11px;
+    color: #546e7a;
+  }
+  #footer span { color: #80cbc4; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0a0a14; }
+  ::-webkit-scrollbar-thumb { background: #1e3a4a; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header">
+  <div id="status-dot"></div>
+  <div class="title">K'MON</div>
+  <div class="subtitle">KryptonBytes Network Monitor</div>
+  <div id="iface-label">interface: —</div>
+  <div id="version-label">v1.0.0-krypton</div>
+</div>
+
+<!-- Main panels -->
+<div id="main">
+
+  <!-- Packet List -->
+  <div class="panel" id="panel-packets">
+    <div class="panel-title">Packets</div>
+    <div id="packet-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Time</th>
+            <th style="width:120px">Source</th>
+            <th style="width:120px">Destination</th>
+            <th style="width:55px">Proto</th>
+            <th style="width:55px">Length</th>
+            <th>Info</th>
+          </tr>
+        </thead>
+        <tbody id="packet-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Vital Stats -->
+  <div class="panel" id="panel-vital">
+    <div class="panel-title">Vitals</div>
+    <div class="section-sep">── INTERFACE ──</div>
+    <div class="stat-row"><span class="stat-label">Interface</span><span class="stat-value" id="v-iface">—</span></div>
+    <div class="section-sep">── TRAFFIC ──</div>
+    <div class="stat-row"><span class="stat-label">Down</span><span class="stat-value highlight" id="v-down">0.000 Mbps</span></div>
+    <div class="stat-row"><span class="stat-label">Up</span><span class="stat-value" id="v-up">0.000 Mbps</span></div>
+    <div class="section-sep">── PACKETS ──</div>
+    <div class="stat-row"><span class="stat-label">Total</span><span class="stat-value" id="v-total">0</span></div>
+    <div class="stat-row"><span class="stat-label">TCP</span><span class="stat-value proto-tcp" id="v-tcp">0</span></div>
+    <div class="stat-row"><span class="stat-label">UDP</span><span class="stat-value proto-udp" id="v-udp">0</span></div>
+    <div class="stat-row"><span class="stat-label">ICMP</span><span class="stat-value proto-icmp" id="v-icmp">0</span></div>
+    <div class="section-sep">── VPN ──</div>
+    <div class="stat-row">
+      <span class="stat-label">Status</span>
+      <span class="vpn-badge vpn-inactive" id="v-vpn">INACTIVE</span>
+    </div>
+    <div class="stat-row"><span class="stat-label">Type</span><span class="stat-value" id="v-vpntype">—</span></div>
+  </div>
+
+  <!-- Packet Details -->
+  <div class="panel" id="panel-details">
+    <div class="panel-title">Packet Details</div>
+    <div id="details-content">
+      <div style="color:#37474f;padding:20px 0;text-align:center">Select a packet</div>
+    </div>
+  </div>
+
+  <!-- CRT -->
+  <div class="panel" id="panel-crt">
+    <div class="panel-title">Matrix</div>
+    <canvas id="crt-canvas"></canvas>
+  </div>
+
+  <!-- Devices -->
+  <div class="panel" id="panel-devices">
+    <div class="panel-title">Devices</div>
+    <button id="scan-btn" onclick="scanDevices()">SCAN NETWORK</button>
+    <div id="devices-content"></div>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div id="footer">
+  Packets/sec: <span id="f-pps">0</span>
+  Total: <span id="f-total">0</span>
+  Down: <span id="f-down">0.000 Mbps</span>
+  Status: <span id="f-status">connecting...</span>
+</div>
+
+<script>
+// ── SSE Connection ────────────────────────────────────────────────
+const MAX_PACKETS = 500;
+let packets = [];
+let selectedIdx = -1;
+let lastTotal = 0;
+let lastTime = Date.now();
+
+const evtSource = new EventSource('/events');
+
+evtSource.onopen = () => {
+  document.getElementById('status-dot').className = 'connected';
+  document.getElementById('f-status').textContent = 'capturing';
+};
+
+evtSource.onerror = () => {
+  document.getElementById('status-dot').className = 'error';
+  document.getElementById('f-status').textContent = 'disconnected';
+};
+
+evtSource.onmessage = (e) => {
+  try {
+    const msg = JSON.parse(e.data.trim());
+    if (msg.type === 'packet') handlePacket(msg.data);
+    else if (msg.type === 'stats') handleStats(msg.data);
+    else if (msg.type === 'interface') handleInterface(msg.data);
+  } catch(err) {}
+};
+
+// ── Packet handling ───────────────────────────────────────────────
+function handlePacket(d) {
+  packets.unshift(d);
+  if (packets.length > MAX_PACKETS) packets.pop();
+
+  const tbody = document.getElementById('packet-tbody');
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+
+  const proto = (d.protocol || '').toUpperCase();
+  const cls = proto === 'TCP' ? 'proto-tcp' : proto === 'UDP' ? 'proto-udp' : proto === 'ICMP' ? 'proto-icmp' : 'proto-other';
+
+  const src = d.src_port ? `${d.src_ip}:${d.src_port}` : d.src_ip;
+  const dst = d.dst_port ? `${d.dst_ip}:${d.dst_port}` : d.dst_ip;
+  const info = d.info || `${proto} ${d.src_ip} → ${d.dst_ip}`;
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${ts}</td>
+    <td>${src}</td>
+    <td>${dst}</td>
+    <td class="${cls}">${proto}</td>
+    <td>${d.length}</td>
+    <td>${info}</td>`;
+  tr.onclick = () => selectPacket(0, tr, d);
+
+  tbody.insertBefore(tr, tbody.firstChild);
+  while (tbody.children.length > MAX_PACKETS) tbody.removeChild(tbody.lastChild);
+
+  // PPS
+  const now2 = Date.now();
+  const elapsed = (now2 - lastTime) / 1000;
+  if (elapsed >= 1) {
+    const total = parseInt(document.getElementById('v-total').textContent) || 0;
+    document.getElementById('f-pps').textContent = Math.round((total - lastTotal) / elapsed);
+    lastTotal = total;
+    lastTime = now2;
+  }
+}
+
+function selectPacket(idx, tr, d) {
+  document.querySelectorAll('#packet-tbody tr').forEach(r => r.classList.remove('selected'));
+  tr.classList.add('selected');
+
+  const proto = (d.protocol || '').toUpperCase();
+  document.getElementById('details-content').innerHTML = `
+    <div class="detail-row"><span class="detail-key">Timestamp</span><span class="detail-val">${d.timestamp}</span></div>
+    <div class="detail-row"><span class="detail-key">Source IP</span><span class="detail-val">${d.src_ip}</span></div>
+    <div class="detail-row"><span class="detail-key">Source Port</span><span class="detail-val">${d.src_port || '—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Dest IP</span><span class="detail-val">${d.dst_ip}</span></div>
+    <div class="detail-row"><span class="detail-key">Dest Port</span><span class="detail-val">${d.dst_port || '—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Protocol</span><span class="detail-val">${proto}</span></div>
+    <div class="detail-row"><span class="detail-key">Length</span><span class="detail-val">${d.length} bytes</span></div>
+    <div class="detail-row"><span class="detail-key">Info</span><span class="detail-val">${d.info || '—'}</span></div>
+  `;
+}
+
+// ── Stats handling ────────────────────────────────────────────────
+function handleStats(d) {
+  document.getElementById('v-total').textContent  = d.total_packets;
+  document.getElementById('v-tcp').textContent    = d.tcp;
+  document.getElementById('v-udp').textContent    = d.udp;
+  document.getElementById('v-icmp').textContent   = d.icmp;
+  document.getElementById('v-down').textContent   = d.mbps_down + ' Mbps';
+  document.getElementById('v-up').textContent     = (d.mbps_up || '0.000') + ' Mbps';
+  document.getElementById('f-total').textContent  = d.total_packets;
+  document.getElementById('f-down').textContent   = d.mbps_down + ' Mbps';
+
+  const vpnBadge = document.getElementById('v-vpn');
+  if (d.vpn_active) {
+    vpnBadge.className = 'vpn-badge vpn-active';
+    vpnBadge.textContent = 'ACTIVE';
+    document.getElementById('v-vpntype').textContent = d.vpn_type || '—';
+  } else {
+    vpnBadge.className = 'vpn-badge vpn-inactive';
+    vpnBadge.textContent = 'INACTIVE';
+    document.getElementById('v-vpntype').textContent = '—';
+  }
+}
+
+// ── Interface ─────────────────────────────────────────────────────
+function handleInterface(d) {
+  document.getElementById('iface-label').textContent = 'interface: ' + d.name;
+  document.getElementById('v-iface').textContent = d.name;
+}
+
+// ── Devices scan ──────────────────────────────────────────────────
+function scanDevices() {
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  btn.textContent = 'SCANNING...';
+  document.getElementById('devices-content').innerHTML =
+    '<div style="padding:12px;color:#546e7a">Scanning network...</div>';
+
+  fetch('/scan')
+    .then(r => r.json())
+    .then(devices => {
+      const c = document.getElementById('devices-content');
+      c.innerHTML = '';
+      devices.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'device-row';
+        div.innerHTML = `
+          <div class="device-ip">${d.ip}</div>
+          <div class="device-host">${d.hostname}</div>
+          <div class="device-mac">${d.mac}</div>`;
+        c.appendChild(div);
+      });
+      btn.disabled = false;
+      btn.textContent = 'SCAN NETWORK';
+    })
+    .catch(() => {
+      document.getElementById('devices-content').innerHTML =
+        '<div style="padding:12px;color:#f44336">Scan failed</div>';
+      btn.disabled = false;
+      btn.textContent = 'SCAN NETWORK';
+    });
+}
+
+// ── Matrix rain ───────────────────────────────────────────────────
+const canvas = document.getElementById('crt-canvas');
+const ctx = canvas.getContext('2d');
+const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノABCDEF0123456789';
+let drops = [];
+
+function resizeCRT() {
+  canvas.width  = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  const cols = Math.floor(canvas.width / 14);
+  drops = Array(cols).fill(1);
+}
+
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(0,0,0,0.05)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00e676';
+  ctx.font = '12px monospace';
+  drops.forEach((y, i) => {
+    const ch = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillStyle = y === 1 ? '#80ff80' : '#00e676';
+    ctx.globalAlpha = Math.random() * 0.5 + 0.3;
+    ctx.fillText(ch, i * 14, y * 14);
+    ctx.globalAlpha = 1;
+    if (y * 14 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  });
+}
+
+resizeCRT();
+window.addEventListener('resize', resizeCRT);
+setInterval(drawMatrix, 50);
+</script>
+</body>
+</html>

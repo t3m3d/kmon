@@ -7,7 +7,4 @@ jxt {
     func kmonCapClose()
     func kmonCapPump()
     func kmonCapNext()
-    func kmonCapByte(hex, offset)
-    func kmonCapU16(hex, offset)
-    func kmonCapU32(hex, offset)
 }

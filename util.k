@@ -2,14 +2,10 @@
 
 import "windows.krh"
 
+// Returns timestamp in milliseconds (GetTickCount64 * 1000000 = nanoseconds approx)
 func timestampNs() {
-    let freq = structNew("LARGE_INTEGER")
-    let counter = structNew("LARGE_INTEGER")
-    QueryPerformanceFrequency(freq)
-    QueryPerformanceCounter(counter)
-    let f = toInt(structGet(freq, "QuadPart"))
-    let c = toInt(structGet(counter, "QuadPart"))
-    emit (c * 1000000000 / f) + ""
+    let ms = GetTickCount64()
+    emit toInt(ms) * 1000000 + ""
 }
 
 func ipToStr(ip) {

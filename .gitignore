@@ -1,3 +1,10 @@
 .vscode
 build/
 Makefile
+*.c
+*.cpp
+*.h
+*.o
+*.hpp
+*.exe
+*.dll
