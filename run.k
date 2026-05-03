@@ -35,7 +35,7 @@ just run {
     printErr("kmon: capturing on " + iface)
 
     // Open browser
-    kmonHttpOpenBrowser()
+    ShellExecuteA("0", "open", "http://127.0.0.1:8080", "0", "0", "1")
 
     // Init stats state
     let ts        = timestampNs()

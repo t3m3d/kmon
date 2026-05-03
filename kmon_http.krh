@@ -4,7 +4,6 @@ jxt {
     c "kmon_http.h"
 
     func kmonHttpInit(htmlPath)
-    func kmonHttpOpenBrowser()
     func kmonHttpPoll()
     func kmonHttpBroadcast(data)
     func kmonHttpStop()
