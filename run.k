@@ -2,10 +2,10 @@
 // Serves kmon_ui.html on :8080, streams packets+stats via SSE
 // Usage: kmon.exe <interface>
 
-import "kmon_cap.krh"
-import "kmon_http.krh"
 import "windows.krh"
 
+import "kmon_cap.k"
+import "kmon_http.k"
 import "kmon_utils.k"
 import "util.k"
 import "stats.k"
